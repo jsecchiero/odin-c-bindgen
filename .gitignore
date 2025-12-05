@@ -1,3 +1,4 @@
+.direnv/
 *.pdb
 *.rdi
 *.exe

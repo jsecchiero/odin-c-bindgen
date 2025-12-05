@@ -184,6 +184,12 @@ output :: proc(types: Type_List, decls: Decl_List, o: Output_Input, filename: st
 				}
 			}
 
+			// Output @(link_name="...") if procedure name was transformed
+			if k == .Proc && d.link_name != "" {
+				output_indent(sb, indent)
+				pfln(sb, `@(link_name="%v")`, d.link_name)
+			}
+
 			output_indent(sb, indent)
 			text := group_member_texts[i]
 			p(sb, text)

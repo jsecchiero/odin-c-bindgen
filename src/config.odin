@@ -23,8 +23,17 @@ Config :: struct {
 	// Remove this suffix from type names (structs, enum, etc)
 	remove_type_suffix: string,
 	
-	// Set to true translate type names to Ada_Case
-	force_ada_case_types: bool,
+	// Set to true to translate type names to Ada_Case (default: true)
+	force_ada_case_types: Maybe(bool),
+
+	// Set to true to translate enum member names to Ada_Case (default: true)
+	force_ada_case_enum_members: Maybe(bool),
+
+	// Set to true to translate procedure names to snake_case (default: true)
+	force_snake_case_procedures: Maybe(bool),
+
+	// Set to true to translate macro/constant names to SCREAMING_SNAKE_CASE (default: true)
+	force_screaming_snake_case_constants: Maybe(bool),
 
 	// Single lib file to import. Will be ignored if `imports_file` is set.
 	import_lib: string,

@@ -179,6 +179,13 @@ translate_process :: proc(tcr: Translate_Collect_Result, config: Config, types: 
 				strip_enum_member_prefixes(&v)
 			}
 
+			// Apply Ada_Case to enum member names if configured (default: true)
+			if config.force_ada_case_enum_members.? or_else true {
+				for &m in v.members {
+					m.name = strings.to_ada_case(m.name)
+				}
+			}
+
 			// Stripping might have caused members to start with a number. Fix that!
 			for &m in v.members {
 				if is_number(m.name[0]) {
@@ -509,7 +516,14 @@ resolve_final_names :: proc(types: Type_List, decls: Decl_List, config: Config) 
 	}
 
 	for &d in decls {
+		original_name := d.name
 		d.name = final_decl_name(d, types, config)
+
+		// Store original name for link_name attribute if the name was transformed
+		_, is_proc := resolve_type_definition(types, d.def, Type_Procedure)
+		if is_proc && d.name != original_name {
+			d.link_name = original_name
+		}
 		
 		switch &def in d.def {
 		case Type_Name: d.def = final_type_name(def, config)
@@ -671,14 +685,26 @@ final_decl_name :: proc(d: Decl, types: Type_List, config: Config) -> string {
 	_, is_proc := resolve_type_definition(types, d.def, Type_Procedure)
 
 	if is_proc {
-		return strings.trim_prefix(d.name, config.remove_function_prefix)
+		res := strings.trim_prefix(d.name, config.remove_function_prefix)
+
+		if config.force_snake_case_procedures.? or_else true {
+			res = strings.to_snake_case(res)
+		}
+
+		return res
 	} else if d.from_macro {
-		return strings.trim_prefix(d.name, config.remove_macro_prefix)
+		res := strings.trim_prefix(d.name, config.remove_macro_prefix)
+
+		if config.force_screaming_snake_case_constants.? or_else true {
+			res = strings.to_screaming_snake_case(res)
+		}
+
+		return res
 	} else {
 		res := strings.trim_prefix(d.name, config.remove_type_prefix)
 		res = strings.trim_suffix(res, config.remove_type_suffix)
 
-		if config.force_ada_case_types {
+		if config.force_ada_case_types.? or_else true {
 			res = strings.to_ada_case(res)
 		}
 
@@ -696,7 +722,7 @@ final_type_name :: proc(name: Type_Name, config: Config) -> Type_Name {
 	res := strings.trim_prefix(string(name), config.remove_type_prefix)
 	res = strings.trim_suffix(res, config.remove_type_suffix)
 
-	if config.force_ada_case_types {
+	if config.force_ada_case_types.? or_else true {
 		res = strings.to_ada_case(res)
 	}
 
@@ -704,7 +730,13 @@ final_type_name :: proc(name: Type_Name, config: Config) -> Type_Name {
 }
 
 final_macro_name :: proc(name: Macro_Name, config: Config) -> Macro_Name {
-	return Macro_Name(strings.trim_prefix(string(name), config.remove_macro_prefix))
+	res := strings.trim_prefix(string(name), config.remove_macro_prefix)
+
+	if config.force_screaming_snake_case_constants.? or_else true {
+		res = strings.to_screaming_snake_case(res)
+	}
+
+	return Macro_Name(res)
 }
 
 // Extracts any comment at the top of the source file. These will be put above the package line in

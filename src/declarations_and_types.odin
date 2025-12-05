@@ -42,6 +42,7 @@ add_decl :: proc(decls: Decl_List, d: Decl) {
 
 Decl :: struct {
 	name: string,
+	link_name: string, // Original C name, used for @(link_name="...") when name is transformed
 
 	def: Definition,
 	comment_before: string,

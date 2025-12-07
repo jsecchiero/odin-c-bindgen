@@ -68,14 +68,22 @@ main :: proc() {
 	output_folder := filepath.join({dir, config.output_folder != "" ? config.output_folder : default_output_folder})
 	package_name := config.package_name != "" ? config.package_name : default_package_name
 	
-	if config.imports_file != "" {
+	if config.imports_file != "" &&
+	   !filepath.is_abs(config.imports_file) {
+
 		config.imports_file = filepath.join({dir, config.imports_file})
 	}
 
 	input_files: [dynamic]string
 
 	for input_base in config.inputs {
-		input := filepath.join({dir, input_base})
+
+		input := input_base
+
+		if !filepath.is_abs(input_base) {
+			input = filepath.join({dir, input_base})
+		}
+
 		if os.is_dir(input) {
 			input_folder, input_folder_err := os2.open(input)
 			log.ensuref(input_folder_err == nil, "Failed opening folder %v: %v", input, input_folder_err)

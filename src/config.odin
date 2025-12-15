@@ -98,5 +98,10 @@ Config :: struct {
 	// Additional include paths to send into clang. While generating the bindings clang will look into
 	// this path in search for included headers.
 	clang_include_paths: []string,
+
+	// Force-include these files before processing each header. Useful when a header depends on types
+	// from another header but doesn't include it directly.
+	clang_force_includes: []string,
+
 	clang_defines: map[string]string,
 }

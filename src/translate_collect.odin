@@ -47,6 +47,10 @@ translate_collect :: proc(filename: string, config: Config, types: Type_List, de
 		append(&clang_args, fmt.ctprintf("-I%v", include))
 	}
 
+	for &force_include in config.clang_force_includes {
+		append(&clang_args, fmt.ctprintf("-include%v", force_include))
+	}
+
 	for k, v in config.clang_defines {
 		append(&clang_args, fmt.ctprintf("-D%s=%s", k, v))
 	}

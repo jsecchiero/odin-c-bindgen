@@ -10,3 +10,4 @@ libclang/libclang.lib
 **/_output
 src/examples/tester/tester/*
 *.sublime-workspace
+/src.bin

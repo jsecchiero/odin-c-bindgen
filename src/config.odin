@@ -49,6 +49,13 @@ Config :: struct {
 	// "Old_Name" = "New_Name"
 	rename: map[string]string,
 
+	// Override the mapping of C primitive types to Odin types.
+	// Keys are C type names (e.g. "int", "unsigned int", "short").
+	// Values are Odin type expressions (e.g. "c.int", "i32").
+	// If the value starts with "c.", "libc.", or "posix.", the appropriate
+	// import will be added automatically.
+	primitive_type_overrides: map[string]string,
+
 	// Turns an enum into a bit_set. Converts the values of the enum into appropriate values for a
 	// bit_set (translates the enum values using a log2 procedure).
 	//

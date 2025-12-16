@@ -121,6 +121,7 @@ translate_collect :: proc(filename: string, config: Config, types: Type_List, de
 		translation_unit = unit,
 		types = types,
 		decls = decls,
+		config = config,
 	}
 
 	// I dislike visitors. They make the code hard to read. So I build a map of all parents and
@@ -160,6 +161,7 @@ Translate_Collect_State :: struct {
 	extra_imports: map[string]bool,
 	macros: [dynamic]Raw_Macro,
 	translation_unit: clang.Translation_Unit,
+	config: Config,
 }
 
 build_cursor_children_lookup :: proc(c: clang.Cursor, res: ^Cursor_Children_Map) {
@@ -523,7 +525,55 @@ type_probably_is_cstring :: proc(ct: clang.Type) -> bool {
 	return (pt.kind == .Char_S || pt.kind == .SChar)
 }
 
+// returns the C type name for a primitive type kind, used for
+// primitive_type_overrides lookup.
+primitive_type_kind_to_c_name :: proc(kind: clang.Type_Kind) -> (string, bool) {
+	#partial switch kind {
+	case .Void:          return "void", true
+	case .Bool:          return "bool", true
+	case .Char_U:        return "unsigned char", true
+	case .UChar:         return "unsigned char", true
+	case .UShort:        return "unsigned short", true
+	case .UInt:          return "unsigned int", true
+	case .ULong:         return "unsigned long", true
+	case .ULongLong:     return "unsigned long long", true
+	case .UInt128:       return "unsigned __int128", true
+	case .Char_S:        return "char", true
+	case .SChar:         return "signed char", true
+	case .Short:         return "short", true
+	case .Int:           return "int", true
+	case .Long:          return "long", true
+	case .LongLong:      return "long long", true
+	case .Int128:        return "__int128", true
+	case .Float:         return "float", true
+	case .Double:        return "double", true
+	case .LongDouble:    return "long double", true
+	case .NullPtr:       return "nullptr_t", true
+	case .WChar:         return "wchar_t", true
+	}
+	return "", false
+}
+
+// adds the appropriate import based on the type override value.
+add_import_for_override :: proc(override: string, tcs: ^Translate_Collect_State) {
+	if strings.has_prefix(override, "c.") {
+		tcs.extra_imports["core:c"] = true
+	} else if strings.has_prefix(override, "libc.") {
+		tcs.extra_imports["core:c/libc"] = true
+	} else if strings.has_prefix(override, "posix.") {
+		tcs.extra_imports["core:sys/posix"] = true
+	}
+}
+
 get_type_name_or_create_anon_type :: proc(ct: clang.Type, tcs: ^Translate_Collect_State) -> Definition {
+	// check for primitive type override in config.
+	if c_name, has_c_name := primitive_type_kind_to_c_name(ct.kind); has_c_name {
+		if override, has_override := tcs.config.primitive_type_overrides[c_name]; has_override {
+			add_import_for_override(override, tcs)
+			return Fixed_Value(override)
+		}
+	}
+
 	#partial switch ct.kind {
 	case .Void:
 		return Fixed_Value("struct {}")

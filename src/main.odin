@@ -158,7 +158,7 @@ main :: proc() {
 
 			output_filename := filepath.join({output_folder, fmt.tprintf("%v.odin", filename_stem)})
 			log.infof("Writing %v", output_filename)
-			output(types, decls, process_res, output_filename, footer, package_name)
+			output(types, decls, process_res, config, output_filename, footer, package_name)
 			vmem.arena_destroy(&gen_arena)
 			vmem.arena_destroy(&types_arena)
 			vmem.arena_destroy(&decls_arena)

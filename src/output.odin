@@ -12,7 +12,7 @@ Output_Input :: Translate_Process_Result
 
 // Takes the result of `translate_process` and outputs bindings into `filename`.
 @(private="package")
-output :: proc(types: Type_List, decls: Decl_List, o: Output_Input, filename: string, footer: string, package_name: string) {
+output :: proc(types: Type_List, decls: Decl_List, o: Output_Input, config: Config, filename: string, footer: string, package_name: string) {
 	ensure(filename != "")
 	ensure(package_name != "")
 	builder := strings.builder_make()
@@ -77,7 +77,9 @@ output :: proc(types: Type_List, decls: Decl_List, o: Output_Input, filename: st
 		if kind == .Proc {
 			output_procedure_signature(types, proc_type, &rhs_builder, 1, false)
 		} else {
-			output_definition(types, d.def, &rhs_builder, 0)
+			// check for struct directive.
+			struct_directive := config.struct_directives[d.name]
+			output_definition(types, d.def, &rhs_builder, 0, struct_directive)
 		}
 
 		rhs := strings.to_string(rhs_builder)
@@ -225,12 +227,16 @@ pfln :: fmt.sbprintfln
 pf :: fmt.sbprintf
 pln :: fmt.sbprintln
 
-output_struct_definition :: proc(types: ^[dynamic]Type, idx: Type_Index, b: ^strings.Builder, indent: int) {
+output_struct_definition :: proc(types: ^[dynamic]Type, idx: Type_Index, b: ^strings.Builder, indent: int, directive: string = "") {
 	t := types[idx]
 	t_struct := &t.(Type_Struct)
 
 	if len(t_struct.fields) == 0 {
-		p(b, "struct {}")
+		if directive != "" {
+			pf(b, "struct %s {{}}", directive)
+		} else {
+			p(b, "struct {}")
+		}
 		return
 	}
 
@@ -248,6 +254,10 @@ output_struct_definition :: proc(types: ^[dynamic]Type, idx: Type_Index, b: ^str
 
 
 	p(b, "struct")
+
+	if directive != "" {
+		pf(b, " %s", directive)
+	}
 
 	if t_struct.raw_union {
 		p(b, " #raw_union")
@@ -481,12 +491,12 @@ calling_convention_string :: proc(calling_convention: Calling_Convention) -> str
 	return "c"
 }
 
-output_definition :: proc(types: ^[dynamic]Type, def: Definition, b: ^strings.Builder, indent: int) {
+output_definition :: proc(types: ^[dynamic]Type, def: Definition, b: ^strings.Builder, indent: int, struct_directive: string = "") {
 	switch d in def {
 	case Type_Name, Fixed_Value, Macro_Name:
 		p(b, d)
 	case Type_Index:
-		parse_type_build(types, d, b, indent)
+		parse_type_build(types, d, b, indent, struct_directive)
 	}
 }
 
@@ -561,7 +571,7 @@ output_procedure_signature :: proc(types: ^[dynamic]Type, tp: Type_Procedure, b:
 	}
 }
 
-parse_type_build :: proc(types: ^[dynamic]Type, idx: Type_Index, b: ^strings.Builder, indent: int) {
+parse_type_build :: proc(types: ^[dynamic]Type, idx: Type_Index, b: ^strings.Builder, indent: int, struct_directive: string = "") {
 	t := types[idx]
 	switch &tv in t {
 	case Type_Unknown:
@@ -585,7 +595,7 @@ parse_type_build :: proc(types: ^[dynamic]Type, idx: Type_Index, b: ^strings.Bui
 		p(b, "rawptr")
 
 	case Type_Struct:
-		output_struct_definition(types, idx, b, indent)
+		output_struct_definition(types, idx, b, indent, struct_directive)
 
 	case Type_Alias:
 		output_definition(types, tv.aliased_type, b, indent)

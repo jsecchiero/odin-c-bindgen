@@ -74,6 +74,11 @@ Config :: struct {
 	// Put these tags on the specified struct field
 	struct_field_tags: map[string]string,
 
+	// Add directives to struct definitions (e.g. #align, #packed).
+	// Use the struct name as key and the directive as value.
+	// Example: "Model" = "#align(align_of(uintptr))"
+	struct_directives: map[string]string,
+
 	// Remove a specific enum member. Write the C name of the member. You can also use wildcards
 	// such as *_Count
 	remove_enum_members: []string,

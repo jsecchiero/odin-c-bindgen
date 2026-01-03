@@ -504,6 +504,11 @@ resolve_final_names :: proc(types: Type_List, decls: Decl_List, config: Config) 
 			for &p in tv.parameters {
 				p.name = ensure_name_valid(p.name)
 
+				// Apply snake_case to parameter names if configured (default: true)
+				if config.force_snake_case_parameters.? or_else true {
+					p.name = strings.to_snake_case(p.name)
+				}
+
 				if type_name, is_type_name := p.type.(Type_Name); is_type_name {
 					p.type = final_type_name(type_name, config)
 				}

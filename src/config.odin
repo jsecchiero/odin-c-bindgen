@@ -32,6 +32,9 @@ Config :: struct {
 	// Set to true to translate procedure names to snake_case (default: true)
 	force_snake_case_procedures: Maybe(bool),
 
+	// Set to true to translate procedure parameter names to snake_case (default: true)
+	force_snake_case_parameters: Maybe(bool),
+
 	// Set to true to translate macro/constant names to SCREAMING_SNAKE_CASE (default: true)
 	force_screaming_snake_case_constants: Maybe(bool),
 
